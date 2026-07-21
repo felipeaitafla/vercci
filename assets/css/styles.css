@@ -1,0 +1,726 @@
+/* ===== VERCCI — Estilos Gerais ===== */
+
+
+/* ----- Fundo contínuo da página (ver verci-design-system.md seção 3) -----
+   Usa um elemento position:fixed em vez de background-attachment:fixed:
+   attachment:fixed força repaint do fundo a cada frame de scroll (trava a
+   rolagem, principalmente com o Lenis); um layer fixed é só compositado. */
+body {
+    background-color: var(--wt-bg);
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--wt-bg);
+    background-image:
+        /* halo dourado na base da tela */
+        radial-gradient(120% 80% at 50% 100%, rgba(180,143,85,0.16) 0%, rgba(180,143,85,0.05) 32%, rgba(8,11,17,0) 70%),
+        /* escurecimento no topo — invertido junto com o halo, senão brigaria com ele */
+        linear-gradient(0deg, rgba(8,11,17,0) 60%, rgba(5,7,11,0.9) 100%),
+        url('../images/noise.png');
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-size: auto, auto, 180px 180px;
+    background-blend-mode: normal, normal, overlay;
+}
+
+.wt-container {
+    max-width: var(--wt-container-width);
+    margin-inline: auto;
+    padding-inline: var(--wt-container-gutter);
+}
+
+/* ----- Animações de entrada (fade + subida curta) ----- */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
+}
+[data-reveal].is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+
+/* ============ BOTÕES ============ */
+.wt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 28px;
+    /* 4px: "a arquitetura pede aresta, não bolha" (design system seção 4) */
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    transition: background-color 180ms ease-in-out, border-color 180ms ease-in-out, color 180ms ease-in-out;
+}
+
+.wt-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.wt-btn--primary {
+    background: var(--wt-gold);
+    color: var(--wt-text-on-gold);
+    border: 1px solid var(--wt-gold);
+}
+
+.wt-btn--primary:hover {
+    background: var(--wt-gold-light);
+    border-color: var(--wt-gold-light);
+}
+
+.wt-btn--outline {
+    background: transparent;
+    color: var(--wt-text-primary);
+    border: 1px solid #FFFFFF;
+}
+
+.wt-btn--outline:hover {
+    border-color: var(--wt-gold);
+    color: var(--wt-text-gold);
+}
+
+/* ============ HERO ============ */
+.wt-hero {
+    min-height: 100vh;
+    min-height: 100svh; /* evita o corte pela barra do navegador no mobile */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: var(--wt-section-pad);
+    /* espaço para o indicador de rolagem não encostar no conteúdo */
+    padding-bottom: calc(var(--wt-section-pad) + 40px);
+    position: relative;
+    overflow: clip;
+}
+
+.wt-hero__inner { width: 100%; }
+
+/* Indicador de rolagem — mesma formatação dos rótulos, em branco 50% */
+.wt-hero__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 180ms ease-in-out;
+}
+
+.wt-hero__scroll:hover { color: rgba(255, 255, 255, 0.8); }
+
+.wt-hero__scroll svg {
+    width: 20px;
+    height: 20px;
+    animation: wt-scroll-hint 2.4s ease-in-out infinite;
+}
+
+@keyframes wt-scroll-hint {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wt-hero__scroll svg { animation: none; }
+}
+
+.wt-hero__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--wt-space-5);
+    align-items: stretch;
+}
+
+.wt-hero__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-3);
+}
+
+/* Logo do site — vive no Hero (context.md seção 4.2), não há header/nav */
+.wt-hero__logo {
+    display: block;
+    margin-bottom: var(--wt-space-1);
+}
+
+.wt-hero__logo img {
+    height: 56px;
+    width: auto;
+}
+
+.wt-hero__title {
+    font-size: clamp(1.625rem, 2.6vw, 2.5rem);
+    /* mais respiro que o 1.05 global: o H1 aqui é menor e tem várias linhas */
+    line-height: 1.3;
+    max-width: 620px;
+}
+
+.wt-hero__desc {
+    margin-top: var(--wt-space-1);
+}
+
+.wt-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wt-space-2);
+    margin-top: var(--wt-space-1);
+}
+
+.wt-hero__media {
+    position: relative;
+    height: 100%;
+}
+
+.wt-hero__slideshow {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--wt-bg-elevated);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-hero__slideshow img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    /* fade menor que o intervalo de 2s, senão a imagem nunca assenta */
+    transition: opacity 800ms ease-in-out;
+}
+
+.wt-hero__slideshow img.is-active {
+    opacity: 1;
+}
+
+.wt-hero__stat {
+    position: absolute;
+    right: 24px;
+    bottom: -28px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 20px 26px;
+    border-radius: 4px;
+    background: var(--wt-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--wt-gold-hairline);
+    box-shadow: 0 24px 48px rgba(5, 7, 11, 0.45);
+}
+
+.wt-hero__stat-number {
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--wt-text-gold);
+}
+
+.wt-hero__stat-caption {
+    font-weight: 500;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--wt-text-tertiary);
+}
+
+@media (max-width: 1024px) {
+    .wt-hero__inner {
+        grid-template-columns: 1fr;
+        gap: var(--wt-space-7);
+    }
+
+    .wt-hero__title { max-width: none; }
+
+    /* Empilhado: sem coluna de texto para igualar, a mídia volta a ter proporção própria */
+    .wt-hero__media { height: auto; }
+    .wt-hero__slideshow { height: auto; aspect-ratio: 4 / 5; }
+
+    .wt-hero__stat { right: 20px; bottom: -20px; padding: 16px 20px; }
+    .wt-hero__stat-number { font-size: 1.5rem; }
+}
+
+@media (max-width: 600px) {
+    .wt-hero { padding-block: 64px; }
+    .wt-hero__slideshow { aspect-ratio: 3 / 4; }
+    .wt-hero__logo img { height: 44px; }
+    .wt-btn { padding: 14px 22px; font-size: 0.875rem; }
+}
+
+/* ============ SEÇÕES — BASE ============ */
+.wt-section {
+    padding-block: var(--wt-section-pad);
+}
+
+/* Justificação de descrições — context.md 4.2 (hero) e 4.6 (serviços/sobre) */
+.wt-hero__desc,
+.wt-split-head__desc p,
+.wt-item-card__desc {
+    text-align: justify;
+    /* hifenização evita os "rios" de espaço que o justify abre em coluna estreita */
+    hyphens: auto;
+}
+
+.wt-section__head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--wt-space-2);
+    text-align: center;
+    max-width: 900px;
+    margin-inline: auto;
+    margin-bottom: var(--wt-space-5);
+}
+
+/* Fica entre duas seções, que já trazem o respiro no próprio padding — daí margin 0.
+   Filete em gradiente: some nas duas pontas, cheio no centro.
+   Precisa ser background (não border), senão não há como aplicar gradiente. */
+.wt-divider {
+    border: none;
+    height: 1px;
+    margin-block: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(180, 143, 85, 0) 0%,
+        rgba(180, 143, 85, 0.33) 50%,
+        rgba(180, 143, 85, 0) 100%
+    );
+}
+
+.wt-card {
+    background: var(--wt-card-bg);
+    border: 1px solid var(--wt-card-border);
+    border-radius: 4px;
+    padding: var(--wt-card-pad);
+    transition: background 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-card:hover {
+    background: var(--wt-card-bg-hover);
+    border-color: var(--wt-card-border-hover);
+}
+
+/* ============ DEPOIMENTOS ============ */
+.wt-depoimentos__widget {
+    width: 100%;
+}
+
+.wt-reviews__cta {
+    text-align: center;
+    margin-top: 32px;
+}
+
+/* ===== PRÉVIA do widget Trustindex (placeholder — ver depoimentos-mockup.php) ===== */
+.wt-ti__grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: var(--wt-space-4);
+    align-items: center;
+}
+
+/* ---- resumo (coluna esquerda) ---- */
+.wt-ti__resumo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.wt-ti__nota-label {
+    font-weight: 500;
+    font-size: 1.125rem;
+    letter-spacing: 0.06em;
+    color: var(--wt-text-primary);
+}
+
+.wt-ti__estrelas {
+    display: inline-flex;
+    gap: 2px;
+    color: #FBBC05;
+}
+
+.wt-ti__estrelas svg { width: 20px; height: 20px; }
+
+.wt-ti__base {
+    font-size: 0.875rem;
+    color: var(--wt-text-secondary);
+}
+
+.wt-ti__base strong { color: var(--wt-text-primary); font-weight: 500; }
+
+.wt-ti__google {
+    font-size: 1.75rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+}
+
+/* ---- carrossel (coluna direita) ---- */
+.wt-ti__carrossel {
+    position: relative;
+    /* sem isso o min-width:auto do item de grid deixa o track esticar
+       até caber todos os cards, vazando do container e matando o scroll */
+    min-width: 0;
+}
+
+.wt-ti__track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-block: 4px;
+}
+
+.wt-ti__track::-webkit-scrollbar { display: none; }
+
+.wt-ti__card {
+    flex: 0 0 300px;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* mais apertado que os demais cards, imitando o widget real do Trustindex */
+    padding: var(--wt-space-3);
+    border: 1px solid var(--wt-card-border);
+    background: var(--wt-card-bg);
+    border-radius: 4px;
+    min-height: 210px;
+}
+
+.wt-ti__card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wt-ti__avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #fff;
+}
+
+.wt-ti__ident {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.wt-ti__ident strong {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--wt-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wt-ti__ident small { font-size: 0.75rem; color: var(--wt-text-tertiary); }
+
+.wt-ti__g { width: 18px; height: 18px; flex-shrink: 0; }
+
+.wt-ti__nota { display: flex; align-items: center; gap: 8px; }
+.wt-ti__nota .wt-ti__estrelas svg { width: 16px; height: 16px; }
+.wt-ti__check { width: 15px; height: 15px; }
+
+.wt-ti__texto {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--wt-text-secondary);
+}
+
+.wt-ti__leia {
+    font-size: 0.8125rem;
+    color: var(--wt-text-tertiary);
+    margin-top: auto;
+}
+
+/* ---- setas ---- */
+.wt-ti__seta {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--wt-border-medium);
+    background: var(--wt-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--wt-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-ti__seta svg { width: 18px; height: 18px; }
+.wt-ti__seta:hover { border-color: var(--wt-gold); }
+.wt-ti__seta--prev { left: -14px; }
+.wt-ti__seta--next { right: -14px; }
+.wt-ti__seta.is-off { opacity: 0; pointer-events: none; }
+
+@media (max-width: 900px) {
+    .wt-ti__grid { grid-template-columns: 1fr; gap: var(--wt-space-3); }
+    .wt-ti__card { flex-basis: 82%; }
+    .wt-ti__seta--prev { left: -6px; }
+    .wt-ti__seta--next { right: -6px; }
+}
+
+/* ============ SERVIÇOS — INTRODUÇÃO ============ */
+/* ============ CABEÇALHO DIVIDIDO (título | descrição) ============
+   Título à esquerda, descrição à direita, cada um em metade da largura.
+   Usado na abertura de Serviços e no bloco Administração de Obras. */
+.wt-split-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--wt-space-4);
+    /* título e descrição assentam na mesma linha de base inferior */
+    align-items: end;
+    margin-bottom: var(--wt-space-6);
+}
+
+.wt-split-head__titulo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-2);
+}
+
+.wt-split-head__desc p {
+    /* ocupa a coluna inteira; os limites de 62ch/46ch encurtariam antes da metade */
+    max-width: none;
+}
+
+/* O separador que antes abria esse respiro foi movido para cima da seção;
+   sem isso o bloco "Administração de Obras" cola no bloco anterior. */
+.wt-servicos-destaque + .wt-split-head {
+    margin-top: var(--wt-section-pad);
+}
+
+@media (max-width: 900px) {
+    .wt-split-head {
+        grid-template-columns: 1fr;
+        gap: var(--wt-space-2);
+    }
+}
+
+.wt-persona-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-3);
+}
+
+.wt-persona-card {
+    display: flex;
+    /* texto à esquerda, imagem à direita */
+    flex-direction: row-reverse;
+    align-items: stretch;
+    /* sem gap: o padding de 48px do bloco de texto já cerca os 4 lados */
+    gap: 0;
+    background: var(--wt-card-bg);
+    border: 1px solid var(--wt-card-border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: background 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-persona-card:hover {
+    background: var(--wt-card-bg-hover);
+    border-color: var(--wt-card-border-hover);
+}
+
+.wt-persona-card__media {
+    position: relative;
+    flex: 0 0 60%;
+    /* a proporção da imagem é o que define a altura do card */
+    aspect-ratio: 16 / 9;
+}
+
+.wt-persona-card__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.wt-persona-card__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: var(--wt-space-3);
+    padding: var(--wt-card-pad);
+}
+
+.wt-persona-card__content h3 {
+    font-size: clamp(1.0625rem, 1.35vw, 1.375rem);
+    line-height: 1.35;
+}
+
+.wt-persona-card__content .wt-btn {
+    padding-inline: 48px;
+}
+
+@media (max-width: 900px) {
+    .wt-persona-card {
+        flex-direction: column;
+    }
+    .wt-persona-card__media {
+        flex-basis: auto;
+        /* empilhado a imagem ocupa a largura toda; 21:9 ficaria uma fresta */
+        aspect-ratio: 16 / 9;
+    }
+    .wt-persona-card__content {
+        padding: 0 var(--wt-space-3) var(--wt-space-3);
+    }
+    .wt-persona-card__content h3 {
+        font-size: 1.0625rem;
+    }
+}
+
+/* ============ SERVIÇOS — DESTAQUES + GRID ============ */
+.wt-servicos-destaque__title {
+    text-align: left;
+    margin-bottom: var(--wt-space-5);
+}
+
+.wt-servicos-destaque {
+    display: flex;
+    align-items: stretch;
+    /* mesmo respiro que separa os cards entre si */
+    gap: var(--wt-space-2);
+}
+
+.wt-servicos-destaque__cards {
+    flex: 0 0 62%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-2);
+}
+
+.wt-destaque-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.wt-destaque-card__title {
+    font-size: 1.25rem;
+    margin-bottom: var(--wt-space-2);
+}
+
+.wt-destaque-card__cta {
+    padding-inline: 48px;
+    margin-top: var(--wt-space-3);
+}
+
+.wt-servicos-destaque__media {
+    position: relative;
+    flex: 1;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--wt-border);
+    min-height: 320px;
+}
+
+.wt-servicos-destaque__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 1024px) {
+    .wt-servicos-destaque {
+        flex-direction: column;
+    }
+    .wt-servicos-destaque__cards { flex-basis: auto; }
+    .wt-servicos-destaque__media { min-height: 280px; }
+}
+
+.wt-servicos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--wt-space-2);
+}
+
+/* Número à esquerda e título à direita, centrados entre si */
+.wt-item-card__title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 1.1875rem;
+    margin-bottom: var(--wt-space-2);
+}
+
+.wt-item-card__n {
+    flex-shrink: 0;
+    font-size: 1.875rem;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--wt-gold);
+}
+
+@media (max-width: 768px) {
+    .wt-servicos-grid { grid-template-columns: 1fr; }
+}
+
+/* ============ WHATSAPP FLUTUANTE ============ */
+.wt-whatsapp-float {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    background: #25D366;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    z-index: 999;
+    transition: transform .2s ease;
+    text-decoration: none;
+}
+
+.wt-whatsapp-float:hover { transform: scale(1.1); }
+.wt-whatsapp-float svg { width: 30px; height: 30px; }
