@@ -1094,18 +1094,17 @@ body::before {
     line-height: 1.7;
 }
 
-.wt-ambiental__cta { margin-top: var(--wt-space-5); }
 
 @media (max-width: 768px) { .wt-ambiental__lista { grid-template-columns: 1fr; } }
 
 /* ============ SEÇÃO 7 — RETROFIT ============
-   Imagem de fundo sangrando de borda a borda, com véu escuro por cima. A URL
-   chega por --wt-retrofit-img, definida no template. */
+   Imagem de fundo sangrando de borda a borda, com véu escuro por cima. O
+   background-image vem por style inline no template — ver a nota lá sobre por
+   que não passa por custom property. */
 .wt-retrofit {
     position: relative;
     isolation: isolate;
     overflow: clip;
-    background-image: var(--wt-retrofit-img);
     background-size: cover;
     background-position: center;
     /* fixed trava a rolagem quando combinado com o Lenis — ver comentário do body */
