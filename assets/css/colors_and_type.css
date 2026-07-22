@@ -26,6 +26,10 @@
     --wt-gold: #B48F55;
     --wt-gold-light: #D4B483;
     --wt-gold-deep: #8A6D3F;
+    /* Dourado dos botões — mais saturado que o da marca, para o CTA destacar
+       do dourado ambiente (filetes, ícones, rótulos). */
+    --wt-gold-btn: #D1A84C;
+    --wt-gold-btn-hover: #DDB868;
 
     /* Fundos */
     --wt-bg: #080B11;
@@ -36,6 +40,10 @@
     --wt-border: #1C2634;
     --wt-border-medium: #2A3746;
     --wt-gold-hairline: rgba(180, 143, 85, 0.28);
+    /* Filete que separa itens de lista (portfólio, diferenciais, ambiental) */
+    --wt-gold-rule: rgba(180, 143, 85, 0.15);
+    /* Ícone em repouso; no hover abre para --wt-gold cheio */
+    --wt-gold-icon: rgba(180, 143, 85, 0.5);
     --wt-glass: rgba(20, 27, 38, 0.72);
 
     /* Accent */

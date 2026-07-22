@@ -33,18 +33,29 @@ body::before {
     padding-inline: var(--wt-container-gutter);
 }
 
-/* ----- Animações de entrada (fade + subida curta) ----- */
+/* ----- Animações de entrada (fade + subida curta) -----
+   Por animation, não por transition: .wt-card e .wt-obra declaram transition
+   própria com a mesma especificidade (0,1,0) e, por virem depois na cascata,
+   substituíam a lista inteira — o opacity/transform daqui era descartado e o
+   card entrava seco, sem animação. Como animation é outra propriedade, os dois
+   convivem: o card mantém o hover de fundo/borda e o reveal mantém a entrada. */
 [data-reveal] {
     opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 700ms ease-in-out, transform 700ms ease-in-out;
 }
+
 [data-reveal].is-visible {
-    opacity: 1;
-    transform: translateY(0);
+    /* both: durante o atraso do stagger o elemento segura o estado inicial */
+    animation: wt-reveal 700ms ease-in-out both;
 }
+
+@keyframes wt-reveal {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    [data-reveal] { opacity: 1; transform: none; transition: none; }
+    [data-reveal] { opacity: 1; }
+    [data-reveal].is-visible { animation: none; }
 }
 
 
@@ -69,14 +80,14 @@ body::before {
 }
 
 .wt-btn--primary {
-    background: var(--wt-gold);
+    background: var(--wt-gold-btn);
     color: var(--wt-text-on-gold);
-    border: 1px solid var(--wt-gold);
+    border: 1px solid var(--wt-gold-btn);
 }
 
 .wt-btn--primary:hover {
-    background: var(--wt-gold-light);
-    border-color: var(--wt-gold-light);
+    background: var(--wt-gold-btn-hover);
+    border-color: var(--wt-gold-btn-hover);
 }
 
 .wt-btn--outline {
@@ -86,49 +97,135 @@ body::before {
 }
 
 .wt-btn--outline:hover {
-    border-color: var(--wt-gold);
-    color: var(--wt-text-gold);
+    border-color: var(--wt-gold-btn);
+    color: var(--wt-gold-btn);
 }
 
-/* ============ HERO ============ */
+/* No mobile o botão ocupa a linha inteira. A hero é a exceção e sobrescreve
+   isso mais adiante, para os dois CTAs dividirem a largura. */
+@media (max-width: 600px) {
+    .wt-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============ HERO ============
+   Slideshow ocupa a tela inteira como fundo; o conteúdo fica centralizado por
+   cima, sobre um véu escuro. */
 .wt-hero {
+    position: relative;
     min-height: 100vh;
     min-height: 100svh; /* evita o corte pela barra do navegador no mobile */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-block: var(--wt-section-pad);
-    /* espaço para o indicador de rolagem não encostar no conteúdo */
-    padding-bottom: calc(var(--wt-section-pad) + 40px);
-    position: relative;
+    /* Padding curto de propósito: o conteúdo já é centrado pelo justify-content
+       e a seção tem 100svh de altura mínima. Com os 128px das demais seções, o
+       bloco passava de 830px e jogava os CTAs para fora da primeira tela. */
+    padding-block: var(--wt-space-5);
+    /* espaço para a seta de rolagem não encostar no conteúdo */
+    padding-bottom: calc(var(--wt-space-5) + 48px);
     overflow: clip;
+    isolation: isolate;
 }
 
+/* ----- Fundo ----- */
+.wt-hero__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+}
+
+.wt-hero__bg img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    /* fade bem menor que o intervalo de 3s, senão a imagem nunca assenta */
+    transition: opacity 1000ms ease-in-out;
+}
+
+.wt-hero__bg img.is-active { opacity: 1; }
+
+/* Véu escuro: precisa segurar o texto branco sobre qualquer um dos quatro
+   slides, então é generoso nas bordas e mais leve no centro, onde a foto
+   aparece. Sem ele o contraste dependeria de qual imagem está no ar. */
+.wt-hero__veu {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(0deg, rgba(8, 11, 17, 0.92) 0%, rgba(8, 11, 17, 0.5) 45%, rgba(8, 11, 17, 0.8) 100%),
+        radial-gradient(75% 60% at 50% 50%, rgba(8, 11, 17, 0.3) 0%, rgba(8, 11, 17, 0.68) 100%);
+}
+
+/* ----- Conteúdo ----- */
 .wt-hero__inner { width: 100%; }
 
-/* Indicador de rolagem — mesma formatação dos rótulos, em branco 50% */
+.wt-hero__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--wt-space-3);
+}
+
+/* Logo do site — vive no Hero (context.md seção 4.2), não há header/nav */
+.wt-hero__logo {
+    display: block;
+    margin-bottom: var(--wt-space-1);
+}
+
+.wt-hero__logo img {
+    height: 72px;
+    width: auto;
+}
+
+.wt-hero__title {
+    font-size: clamp(1.75rem, 3.2vw, 3rem);
+    /* 500 é o teto: a Inter Tight é carregada na faixa 300–500 e acima disso o
+       navegador engorda a fonte por conta própria (faux bold), que borra o
+       traço. O design system §1 também para em 500. */
+    font-weight: 500;
+    /* mais respiro que o 1.05 global: o H1 aqui tem várias linhas */
+    line-height: 1.25;
+    max-width: 26ch;
+}
+
+.wt-hero__desc {
+    margin-top: var(--wt-space-1);
+    max-width: 40ch;
+}
+
+.wt-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--wt-space-2);
+    margin-top: var(--wt-space-1);
+}
+
+/* ----- Seta de rolagem (sem rótulo) ----- */
 .wt-hero__scroll {
     position: absolute;
     left: 50%;
     bottom: 32px;
     transform: translateX(-50%);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    font-weight: 500;
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
+    justify-content: center;
     color: rgba(255, 255, 255, 0.5);
     transition: color 180ms ease-in-out;
 }
 
-.wt-hero__scroll:hover { color: rgba(255, 255, 255, 0.8); }
+.wt-hero__scroll:hover { color: var(--wt-gold); }
 
 .wt-hero__scroll svg {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     animation: wt-scroll-hint 2.4s ease-in-out infinite;
 }
 
@@ -141,131 +238,29 @@ body::before {
     .wt-hero__scroll svg { animation: none; }
 }
 
-.wt-hero__inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--wt-space-5);
-    align-items: stretch;
-}
+@media (max-width: 600px) {
+    .wt-hero { padding-block: 64px; padding-bottom: 104px; }
+    .wt-hero__logo img { height: 56px; }
+    .wt-hero__title { max-width: none; }
+    .wt-btn { padding: 14px 22px; font-size: 0.875rem; }
 
-.wt-hero__content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--wt-space-3);
-}
-
-/* Logo do site — vive no Hero (context.md seção 4.2), não há header/nav */
-.wt-hero__logo {
-    display: block;
-    margin-bottom: var(--wt-space-1);
-}
-
-.wt-hero__logo img {
-    height: 56px;
-    width: auto;
-}
-
-.wt-hero__title {
-    font-size: clamp(1.625rem, 2.6vw, 2.5rem);
-    /* mais respiro que o 1.05 global: o H1 aqui é menor e tem várias linhas */
-    line-height: 1.3;
-    max-width: 620px;
-}
-
-.wt-hero__desc {
-    margin-top: var(--wt-space-1);
-}
-
-.wt-hero__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--wt-space-2);
-    margin-top: var(--wt-space-1);
-}
-
-.wt-hero__media {
-    position: relative;
-    height: 100%;
-}
-
-.wt-hero__slideshow {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 4px;
-    overflow: hidden;
-    background: var(--wt-bg-elevated);
-    border: 1px solid var(--wt-border);
-}
-
-.wt-hero__slideshow img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    /* fade menor que o intervalo de 2s, senão a imagem nunca assenta */
-    transition: opacity 800ms ease-in-out;
-}
-
-.wt-hero__slideshow img.is-active {
-    opacity: 1;
-}
-
-.wt-hero__stat {
-    position: absolute;
-    right: 24px;
-    bottom: -28px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 20px 26px;
-    border-radius: 4px;
-    background: var(--wt-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--wt-gold-hairline);
-    box-shadow: 0 24px 48px rgba(5, 7, 11, 0.45);
-}
-
-.wt-hero__stat-number {
-    font-size: 2rem;
-    font-weight: 300;
-    line-height: 1;
-    color: var(--wt-text-gold);
-}
-
-.wt-hero__stat-caption {
-    font-weight: 500;
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--wt-text-tertiary);
-}
-
-@media (max-width: 1024px) {
-    .wt-hero__inner {
-        grid-template-columns: 1fr;
-        gap: var(--wt-space-7);
+    /* Os dois CTAs da hero dividem a linha em vez de empilhar. nowrap no
+       container é obrigatório: com o wrap padrão o segundo botão cairia para
+       baixo assim que o primeiro pedisse largura. */
+    .wt-hero__actions {
+        flex-wrap: nowrap;
+        width: 100%;
     }
 
-    .wt-hero__title { max-width: none; }
-
-    /* Empilhado: sem coluna de texto para igualar, a mídia volta a ter proporção própria */
-    .wt-hero__media { height: auto; }
-    .wt-hero__slideshow { height: auto; aspect-ratio: 4 / 5; }
-
-    .wt-hero__stat { right: 20px; bottom: -20px; padding: 16px 20px; }
-    .wt-hero__stat-number { font-size: 1.5rem; }
-}
-
-@media (max-width: 600px) {
-    .wt-hero { padding-block: 64px; }
-    .wt-hero__slideshow { aspect-ratio: 3 / 4; }
-    .wt-hero__logo img { height: 44px; }
-    .wt-btn { padding: 14px 22px; font-size: 0.875rem; }
+    .wt-hero__actions .wt-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        /* padding menor e rótulo quebrável: em 320px sobram ~68px para o texto
+           e "Fale Conosco" mede 84px — sem isso ele vazaria do botão */
+        padding-inline: 16px;
+        white-space: normal;
+    }
 }
 
 /* ============ SEÇÕES — BASE ============ */
@@ -273,8 +268,8 @@ body::before {
     padding-block: var(--wt-section-pad);
 }
 
-/* Justificação de descrições — context.md 4.2 (hero) e 4.6 (serviços/sobre) */
-.wt-hero__desc,
+/* Justificação de descrições — context.md 4.6 (serviços/sobre).
+   O Hero saiu daqui: com o texto centralizado, o justify abriria rios. */
 .wt-split-head__desc p,
 .wt-item-card__desc {
     text-align: justify;
@@ -522,15 +517,29 @@ body::before {
 }
 
 /* O separador que antes abria esse respiro foi movido para cima da seção;
-   sem isso o bloco "Administração de Obras" cola no bloco anterior. */
+   sem isso o bloco "Administração de Obras" cola no bloco anterior.
+   Dobro do padding porque na fronteira entre duas seções os dois paddings se
+   somam (128 + 128) — aqui, dentro da mesma seção, só há esta margem. */
 .wt-servicos-destaque + .wt-split-head {
-    margin-top: var(--wt-section-pad);
+    margin-top: calc(var(--wt-section-pad) * 2);
 }
 
 @media (max-width: 900px) {
     .wt-split-head {
         grid-template-columns: 1fr;
         gap: var(--wt-space-2);
+        text-align: center;
+    }
+
+    /* empilhado, título e descrição viram um bloco só — alinhar à esquerda
+       deixava o rótulo solto acima de um H2 de largura irregular */
+    .wt-split-head__titulo { align-items: center; }
+
+    /* desfaz o justify da regra global: em coluna estreita e centrado ele
+       abriria rios de espaço entre as palavras */
+    .wt-split-head__desc p {
+        text-align: center;
+        hyphens: none;
     }
 }
 
@@ -605,7 +614,9 @@ body::before {
         aspect-ratio: 16 / 9;
     }
     .wt-persona-card__content {
-        padding: 0 var(--wt-space-3) var(--wt-space-3);
+        /* padding nos quatro lados: com o topo zerado o texto encostava na
+           imagem, já que empilhado não há mais a coluna lateral separando */
+        padding: var(--wt-space-3);
     }
     .wt-persona-card__content h3 {
         font-size: 1.0625rem;
@@ -616,6 +627,12 @@ body::before {
 .wt-servicos-destaque__title {
     text-align: left;
     margin-bottom: var(--wt-space-5);
+}
+
+/* No empilhado o título passa a centrar, junto com os split-heads das
+   seções 3 e 3.2 — senão ele seria o único desalinhado do bloco */
+@media (max-width: 900px) {
+    .wt-servicos-destaque__title { text-align: center; }
 }
 
 .wt-servicos-destaque {
@@ -724,3 +741,1006 @@ body::before {
 
 .wt-whatsapp-float:hover { transform: scale(1.1); }
 .wt-whatsapp-float svg { width: 30px; height: 30px; }
+
+/* ============ ÍCONES ============
+   Lucide outline, soltos sobre a superfície — nunca dentro de círculo ou caixa
+   preenchida (verci-design-system.md seção 5). */
+.wt-icone {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    color: var(--wt-gold-icon);
+    transition: color 180ms ease-in-out;
+}
+
+/* Hover abre o dourado até o cheio. Agrupado aqui, e não em cada seção, para
+   os três blocos que usam .wt-icone não saírem do passo entre si. */
+.wt-dif-item:hover .wt-icone,
+.wt-ambiental__item:hover .wt-icone,
+.wt-beneficio:hover .wt-icone {
+    color: var(--wt-gold);
+}
+
+/* ============ LISTA COM MARCADOR EM FILETE ============ */
+.wt-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-1);
+}
+
+.wt-lista li {
+    position: relative;
+    padding-left: 22px;
+    line-height: 1.7;
+    color: var(--wt-text-secondary);
+}
+
+/* Filete dourado no lugar do bullet: marca sem virar "tinta" */
+.wt-lista li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.8em;
+    width: 10px;
+    height: 1px;
+    background: var(--wt-gold);
+}
+
+/* ============ SEÇÃO 4 — PORTFÓLIO ============ */
+.wt-portfolio__head {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: var(--wt-space-6);
+    align-items: start;
+}
+
+.wt-portfolio__marca {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-3);
+}
+
+/* Número e legenda lado a lado, a legenda centrada na altura do número */
+.wt-portfolio__numero {
+    display: flex;
+    align-items: center;
+    gap: var(--wt-space-2);
+}
+
+/* O "+75" é o ponto de atenção da seção — único elemento dourado grande aqui */
+.wt-portfolio__numero-valor {
+    font-size: clamp(3.5rem, 7vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: rgba(180, 143, 85, 0.63);
+    font-variant-numeric: tabular-nums;
+}
+
+.wt-portfolio__numero-txt {
+    display: flex;
+    flex-direction: column;
+    font-size: 1.125rem;
+    font-weight: 300;
+    line-height: 1.3;
+    color: rgba(180, 143, 85, 0.63);
+}
+
+.wt-portfolio__numero-txt strong { font-weight: 500; }
+
+/* Coluna da direita: chapéu + ficha das obras */
+.wt-portfolio__lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-2);
+}
+
+.wt-portfolio__convite {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--wt-text-gold);
+    border-bottom: 1px solid var(--wt-gold-hairline);
+    padding-bottom: 2px;
+    transition: color 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-portfolio__convite:hover {
+    color: var(--wt-gold-light);
+    border-color: var(--wt-gold-light);
+}
+
+.wt-portfolio__nota { display: block; }
+
+/* Ficha técnica das obras — régua horizontal, sem caixa */
+.wt-portfolio__obras {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.wt-obra {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: var(--wt-space-3);
+    align-items: baseline;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--wt-gold-rule);
+    transition: border-color 180ms ease-in-out;
+}
+
+.wt-obra:first-child { border-top: 1px solid var(--wt-gold-rule); }
+/* hover no mesmo dourado dos cards — o cinza-azulado antigo destoava do filete */
+.wt-obra:hover { border-color: var(--wt-card-border-hover); }
+
+.wt-obra__nome {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--wt-text-primary);
+}
+
+.wt-obra__ficha {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--wt-text-tertiary);
+}
+
+.wt-obra__sep { padding-inline: 6px; }
+
+@media (max-width: 1024px) {
+    .wt-portfolio__head { grid-template-columns: 1fr; gap: var(--wt-space-5); }
+}
+
+@media (max-width: 600px) {
+    .wt-obra { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* ============ CARROSSEL INFINITO (marquee) ============
+   Track duplicado deslizando -50% (context.md 4.10). O respiro entre itens é
+   margin-right no item, não gap no track: com gap, metade da largura não cai
+   exatamente numa cópia inteira e a emenda dá um salto a cada volta. */
+.wt-marquee {
+    overflow: hidden;
+    margin-block: var(--wt-space-6);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
+}
+
+.wt-marquee__track {
+    display: flex;
+    width: max-content;
+    animation: wt-marquee 80s linear infinite;
+}
+
+.wt-marquee__item {
+    flex: 0 0 auto;
+    margin: 0 var(--wt-space-2) 0 0;
+}
+
+.wt-marquee__item img {
+    height: 320px;
+    width: auto;
+    border-radius: 4px;
+    border: 1px solid var(--wt-border);
+}
+
+@keyframes wt-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* Sem pausa no hover: no toque a pausa "gruda" e trava o carrossel */
+@media (max-width: 768px) {
+    .wt-marquee__track { animation-duration: 64s; }
+    .wt-marquee__item img { height: 240px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wt-marquee { overflow-x: auto; }
+    .wt-marquee__track { animation: none; }
+}
+
+/* ============ VÍDEOS (facade) ============ */
+.wt-videos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--wt-space-3);
+}
+
+.wt-video-btn {
+    position: relative;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 9 / 16;
+    padding: 0;
+    border: 1px solid var(--wt-card-border);
+    border-radius: 4px;
+    background: var(--wt-bg-elevated);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 180ms ease-in-out;
+}
+
+.wt-video-btn:hover { border-color: var(--wt-card-border-hover); }
+
+.wt-video-btn img,
+.wt-video-btn iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.wt-video-btn img { object-fit: cover; }
+
+.wt-video-btn__play {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 4px;
+    background: var(--wt-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--wt-gold-hairline);
+    color: var(--wt-text-gold);
+    transition: background 180ms ease-in-out;
+}
+
+.wt-video-btn__play svg { width: 20px; height: 20px; }
+.wt-video-btn:hover .wt-video-btn__play { background: rgba(20, 27, 38, 0.9); }
+
+@media (max-width: 600px) {
+    /* 2 por linha. O padding-inline vai a zero porque o .wt-container já dá os
+       24px até a borda — somar aqui empurraria para 72px. */
+    .wt-videos {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--wt-space-2);
+        padding-inline: 0;
+    }
+
+    .wt-video-btn { max-width: none; }
+}
+
+/* ============ SEÇÃO 5 — DIFERENCIAIS ============
+   Sem card: ícone e texto assentam na superfície, separados por régua fina.
+   Nove caixas douradas aqui estourariam o teto de ~5% de dourado na tela. */
+.wt-dif-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--wt-space-4) var(--wt-space-3);
+}
+
+.wt-dif-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--wt-space-2);
+    padding-top: var(--wt-space-3);
+    border-top: 1px solid var(--wt-gold-rule);
+}
+
+/* Texto mais estreito que a coluna: compacta o bloco e deixa o eixo central
+   evidente. Sem o teto, a linha ia até a borda e o centramento sumia. */
+.wt-dif-item .wt-body { max-width: 28ch; }
+
+@media (max-width: 900px) { .wt-dif-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .wt-dif-grid { grid-template-columns: 1fr; } }
+
+/* ============ SEÇÃO 5.1 — CONCEITOS ============
+   A copy traz quatro conceitos (a diretriz de layout falava em três),
+   dispostos em 2x2. */
+.wt-conceitos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--wt-space-2);
+    margin-top: var(--wt-space-7);
+}
+
+.wt-conceito {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-2);
+}
+
+.wt-conceito__intro { max-width: none; }
+
+.wt-conceito__fecho {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--wt-text-gold);
+    margin-top: var(--wt-space-1);
+}
+
+@media (max-width: 900px) {
+    .wt-conceitos { grid-template-columns: 1fr; }
+}
+
+/* ============ SEÇÃO 6 — AMBIENTAL ============ */
+
+/* Largura travada para o título quebrar em "Construir Sem / Deixar Marca" */
+.wt-ambiental .wt-split-head__titulo h2 { max-width: 12ch; }
+
+.wt-ambiental__intro { display: block; margin-bottom: var(--wt-space-3); }
+
+.wt-ambiental__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--wt-space-3) var(--wt-space-4);
+}
+
+.wt-ambiental__item {
+    display: flex;
+    gap: var(--wt-space-2);
+    align-items: flex-start;
+    padding-top: var(--wt-space-2);
+    border-top: 1px solid var(--wt-gold-rule);
+    line-height: 1.7;
+}
+
+.wt-ambiental__cta { margin-top: var(--wt-space-5); }
+
+@media (max-width: 768px) { .wt-ambiental__lista { grid-template-columns: 1fr; } }
+
+/* ============ SEÇÃO 7 — RETROFIT ============
+   Imagem de fundo sangrando de borda a borda, com véu escuro por cima. A URL
+   chega por --wt-retrofit-img, definida no template. */
+.wt-retrofit {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+    background-image: var(--wt-retrofit-img);
+    background-size: cover;
+    background-position: center;
+    /* fixed trava a rolagem quando combinado com o Lenis — ver comentário do body */
+    background-attachment: scroll;
+}
+
+/* Véu em gradiente: mais fechado à esquerda, onde fica o texto, para o
+   contraste do corpo não depender da foto que estiver por trás. */
+.wt-retrofit__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(90deg, rgba(8, 11, 17, 0.88) 0%, rgba(8, 11, 17, 0.72) 45%, rgba(8, 11, 17, 0.38) 100%),
+        linear-gradient(0deg, rgba(8, 11, 17, 0.58) 0%, rgba(8, 11, 17, 0.16) 50%, rgba(8, 11, 17, 0.58) 100%);
+}
+
+.wt-retrofit__inner { display: block; }
+
+.wt-retrofit__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-3);
+    max-width: 60ch;
+}
+
+.wt-retrofit__desc { max-width: 52ch; }
+
+/* ============ SEÇÕES 8 e 9 — BENEFÍCIOS + QUEM SOMOS ============ */
+/* Fundo, contorno e hover vêm de .wt-card — a tira é um card como os outros */
+.wt-beneficios {
+    list-style: none;
+    margin: 0 0 var(--wt-space-7);
+    /* explícito, e não herdado de .wt-card: a tira é o único card cujo respiro
+       interno precisa acompanhar o gap maior entre as colunas */
+    padding: 48px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--wt-space-4);
+}
+
+/* Ícone acima do texto, não ao lado. Com 5 colunas de ~190px, o ícone ao lado
+   consumia 38px e empurrava a descrição mais longa ("Sistemas de acompanhamento
+   ao cliente em tempo real", 313px corridos) para 3 linhas. Empilhado, o texto
+   fica com a coluna inteira e as 5 descrições cabem em 2 linhas. */
+.wt-beneficio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+}
+
+.wt-beneficio .wt-icone { width: 24px; height: 24px; }
+
+.wt-beneficio__txt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.wt-beneficio__txt strong {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--wt-text-primary);
+}
+
+.wt-beneficio__txt span {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--wt-text-tertiary);
+}
+
+/* As 5 colunas só se sustentam enquanto cada uma comporta a descrição mais
+   longa em 2 linhas — precisa de ~176px de texto. Com o padding de 48px e o gap
+   de 40px isso exige viewport a partir de ~1262px, daí o corte em 1280 e não no
+   1200 de antes (que valia para o gap de 24px). Abaixo disso a tira reduz o
+   número de colunas em vez de deixar o texto crescer para 3 linhas. */
+@media (max-width: 1280px) { .wt-beneficios { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { .wt-beneficios { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) {
+    .wt-beneficios {
+        grid-template-columns: 1fr;
+        padding: var(--wt-space-4);
+        /* 64px entre a tira e a borda da tela. O .wt-container já aplica o
+           gutter, então desconta-se ele em vez de somar 64 por cima — assim o
+           valor final é 64 de verdade, não 64 + gutter. */
+        margin-inline: calc(64px - var(--wt-container-gutter));
+    }
+}
+
+/* Texto inteiro à esquerda, imagem à direita.
+   stretch (e não center) é o que faz a imagem acompanhar a altura da coluna de
+   texto: com center ela ficava do tamanho da própria proporção e sobrava. */
+.wt-quem-somos__inner {
+    display: grid;
+    grid-template-columns: 1fr 0.85fr;
+    gap: var(--wt-space-6);
+    align-items: stretch;
+}
+
+.wt-quem-somos__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-3);
+}
+
+.wt-quem-somos__content h2 { margin-bottom: var(--wt-space-1); }
+
+.wt-quem-somos__content .wt-body {
+    max-width: none;
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* Sem aspect-ratio: a altura passa a vir da linha do grid, definida pela coluna
+   de texto. A imagem é absoluta para preencher essa altura seja ela qual for —
+   com height:100% ela dependeria de o pai ter altura resolvida. */
+.wt-quem-somos__media {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--wt-card-border);
+}
+
+.wt-quem-somos__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 900px) {
+    .wt-quem-somos__inner { grid-template-columns: 1fr; gap: var(--wt-space-4); }
+    .wt-quem-somos__media { aspect-ratio: 3 / 2; }
+}
+
+/* ============ SEÇÃO 10 — UNIDADES ============ */
+.wt-unidades__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--wt-space-2);
+}
+
+.wt-unidade {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.wt-unidade__mapa { aspect-ratio: 16 / 9; }
+
+.wt-unidade__mapa iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    /* O embed do Maps só vem em tema claro; sem isso abre um buraco branco
+       no meio da página, contra o "escuro do início ao fim" do design system. */
+    filter: invert(0.92) hue-rotate(180deg) grayscale(0.55) contrast(0.9);
+}
+
+.wt-unidade__info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wt-space-2);
+    padding: var(--wt-card-pad);
+}
+
+.wt-unidade__endereco {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-style: normal;
+    line-height: 1.6;
+    color: var(--wt-text-secondary);
+}
+
+.wt-unidade__endereco strong {
+    font-weight: 500;
+    color: var(--wt-text-primary);
+}
+
+@media (max-width: 900px) {
+    .wt-unidades__grid { grid-template-columns: 1fr; }
+    .wt-unidade__info { padding: var(--wt-space-3); }
+}
+
+/* ============ SEÇÃO 11 — CONTATO ============ */
+
+/* Sem o teto de 46ch o subtítulo cabe numa linha só; no mobile ele volta a
+   quebrar sozinho, porque a largura da tela passa a mandar. */
+.wt-contato .wt-section__head .wt-lead { max-width: none; }
+
+.wt-form {
+    max-width: 760px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-3);
+}
+
+.wt-form__linha {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--wt-space-3);
+}
+
+.wt-campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-1);
+}
+
+.wt-campo label {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wt-text-tertiary);
+}
+
+/* Mesmo véu dourado dos cards, mais apagado — o campo é superfície de apoio,
+   não pode competir com os cards de conteúdo. */
+.wt-campo input,
+.wt-campo textarea {
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--wt-text-primary);
+    background: rgba(180, 143, 85, 0.03);
+    border: 1px solid var(--wt-card-border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    transition: border-color 180ms ease-in-out, background 180ms ease-in-out;
+}
+
+.wt-campo input:hover,
+.wt-campo textarea:hover { background: rgba(180, 143, 85, 0.06); }
+
+.wt-campo textarea { resize: vertical; min-height: 140px; }
+
+.wt-campo input:focus,
+.wt-campo textarea:focus {
+    outline: none;
+    border-color: var(--wt-gold);
+}
+
+/* row + justify-content: center centra o par no formulário sem tirar o
+   checkbox da esquerda do texto — align-items:flex-start o mantém colado à
+   primeira linha caso o rótulo quebre em telas estreitas. */
+.wt-campo--consent {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+}
+
+.wt-campo--consent input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: var(--wt-gold);
+}
+
+.wt-campo--consent label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--wt-text-secondary);
+}
+
+.wt-campo--consent a {
+    color: var(--wt-text-gold);
+    border-bottom: 1px solid var(--wt-gold-hairline);
+}
+
+.wt-form__enviar { align-self: center; }
+
+/* Honeypot: precisa ser preenchível por robô, então não pode usar display:none */
+.wt-form__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Vive dentro do form, logo acima do botão — o gap do form já dá o respiro.
+   A caixa segue com a largura do formulário; centrar o texto é o que alinha o
+   aviso com o consentimento e o botão sem a caixa pular de tamanho a cada
+   mensagem diferente. */
+.wt-aviso {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--wt-border);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.wt-aviso[hidden] { display: none; }
+
+.wt-aviso--ok {
+    border-color: var(--wt-gold-hairline);
+    background: var(--wt-card-bg);
+    color: var(--wt-text-gold);
+}
+
+/* Erro discreto: vermelho só insinuado no fundo e no contorno, texto abaixo do
+   branco cheio. É um aviso de campo vazio, não um alarme. */
+.wt-aviso--erro {
+    border-color: rgba(214, 69, 69, 0.22);
+    background: rgba(214, 69, 69, 0.09);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 600px) {
+    .wt-form__linha { grid-template-columns: 1fr; }
+}
+
+/* ============ SEÇÃO 12 — RODAPÉ ============ */
+.wt-footer {
+    background: var(--wt-card-bg);
+    border-top: 1px solid var(--wt-card-border);
+}
+
+.wt-footer__grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 0.8fr;
+    gap: var(--wt-space-4);
+    padding-block: var(--wt-space-6);
+}
+
+.wt-footer__col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-2);
+}
+
+.wt-footer__marca { gap: var(--wt-space-3); }
+
+/* align-self obrigatório: a coluna é flex e o align-items:stretch padrão
+   ignorava o width:auto, esticando o logo para os 336px da coluna (proporção
+   7:1 numa imagem que é 2.48:1). */
+.wt-footer__logo {
+    height: 72px;
+    width: auto;
+    align-self: flex-start;
+}
+
+.wt-footer__marca p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    max-width: 32ch;
+    color: var(--wt-text-tertiary);
+}
+
+.wt-footer__titulo {
+    font-weight: 500;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--wt-text-gold);
+}
+
+.wt-footer__endereco {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--wt-text-secondary);
+    transition: color 180ms ease-in-out;
+}
+
+.wt-footer__endereco:hover { color: var(--wt-text-gold); }
+
+.wt-footer__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wt-footer__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--wt-text-secondary);
+    transition: color 180ms ease-in-out;
+}
+
+.wt-footer__link svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--wt-gold-icon);
+    transition: color 180ms ease-in-out;
+}
+
+.wt-footer__link:hover { color: var(--wt-text-gold); }
+.wt-footer__link:hover svg { color: var(--wt-gold); }
+
+.wt-footer__social {
+    display: flex;
+    gap: var(--wt-space-2);
+}
+
+.wt-footer__social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--wt-gold-rule);
+    border-radius: 4px;
+    color: var(--wt-gold-icon);
+    transition: color 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-footer__social a svg { width: 18px; height: 18px; }
+
+.wt-footer__social a:hover {
+    color: var(--wt-gold);
+    border-color: var(--wt-gold-hairline);
+}
+
+.wt-footer__bottom { border-top: 1px solid var(--wt-card-border); }
+
+.wt-footer__bottom-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--wt-space-2);
+    padding-block: var(--wt-space-3);
+    font-size: 0.8125rem;
+    color: var(--wt-text-tertiary);
+}
+
+.wt-footer__legais {
+    display: flex;
+    gap: var(--wt-space-3);
+}
+
+.wt-footer__legais a { transition: color 180ms ease-in-out; }
+.wt-footer__legais a:hover { color: var(--wt-text-gold); }
+
+.wt-footer__credit {
+    border-top: 1px solid var(--wt-card-border);
+    padding-block: var(--wt-space-2);
+    font-size: 0.75rem;
+    color: var(--wt-text-tertiary);
+    text-align: center;
+}
+
+.wt-footer__credit a {
+    color: var(--wt-text-secondary);
+    transition: color 180ms ease-in-out;
+}
+
+.wt-footer__credit a:hover { color: var(--wt-text-gold); }
+
+@media (max-width: 1024px) {
+    .wt-footer__grid { grid-template-columns: 1fr 1fr; gap: var(--wt-space-5); }
+}
+
+@media (max-width: 600px) {
+    .wt-footer__grid { grid-template-columns: 1fr; text-align: center; }
+    .wt-footer__col { align-items: center; }
+    .wt-footer__logo { align-self: center; }
+    .wt-footer__marca p { max-width: none; }
+    .wt-footer__endereco { align-items: center; }
+    /* ícone acima do texto, exceto nas redes sociais (context.md 4.4) */
+    .wt-footer__link { flex-direction: column; gap: 6px; }
+    .wt-footer__social { justify-content: center; }
+    .wt-footer__bottom-inner { flex-direction: column; align-items: center; text-align: center; }
+}
+
+/* ============ PÁGINA DE POLÍTICA DE PRIVACIDADE ============
+   Layout definido no context.md seção 4.7. */
+.wt-legal {
+    padding-block: var(--wt-space-5) var(--wt-space-7);
+}
+
+.wt-legal__inner {
+    max-width: 860px;
+}
+
+/* Logo numa ponta, "Voltar ao site" na outra */
+.wt-legal__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--wt-space-3);
+    margin-bottom: var(--wt-space-6);
+}
+
+.wt-legal__logo-img {
+    height: 56px;
+    width: auto;
+}
+
+/* h2, não h1: o H1 da marca vive no Hero da home (context.md 4.2) */
+.wt-legal__title {
+    /* nowrap para caber numa linha; o mobile solta, senão estoura a tela */
+    white-space: nowrap;
+}
+
+.wt-legal__meta {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--wt-text-tertiary);
+    margin-bottom: var(--wt-space-6);
+}
+
+/* ----- Corpo do texto jurídico -----
+   Tudo escopado sob .wt-legal__body de propósito: solto, o `p { text-align:
+   justify }` pegaria também o rótulo do cabeçalho (justify em linha curta
+   encosta tudo à esquerda) e o `a { text-decoration: underline }` sublinharia
+   os botões "Voltar ao site". */
+.wt-legal__body {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--wt-text-secondary);
+}
+
+.wt-legal__body p {
+    margin-bottom: var(--wt-space-3);
+    text-align: justify;
+    hyphens: auto;
+}
+
+.wt-legal__entidade {
+    font-weight: 500;
+    color: var(--wt-text-primary);
+    text-align: left !important;
+}
+
+.wt-legal__body h2 {
+    font-size: clamp(1.25rem, 2vw, 1.625rem);
+    font-weight: 400;
+    color: var(--wt-text-primary);
+    margin-top: var(--wt-space-5);
+    margin-bottom: var(--wt-space-2);
+    padding-top: var(--wt-space-3);
+    border-top: 1px solid var(--wt-gold-rule);
+}
+
+.wt-legal__body ul {
+    list-style: none;
+    margin: 0 0 var(--wt-space-3);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--wt-space-1);
+}
+
+.wt-legal__body li {
+    position: relative;
+    padding-left: 22px;
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* mesmo filete dourado das listas do restante do site */
+.wt-legal__body li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.85em;
+    width: 10px;
+    height: 1px;
+    background: var(--wt-gold);
+}
+
+.wt-legal__body a {
+    color: var(--wt-text-gold);
+    border-bottom: 1px solid var(--wt-gold-hairline);
+    transition: color 180ms ease-in-out, border-color 180ms ease-in-out;
+}
+
+.wt-legal__body a:hover {
+    color: var(--wt-gold-light);
+    border-color: var(--wt-gold-light);
+}
+
+/* Blocos em caixa alta do texto original */
+.wt-legal__aviso {
+    padding: var(--wt-space-3);
+    border: 1px solid var(--wt-card-border);
+    background: var(--wt-card-bg);
+    border-radius: 4px;
+    font-size: 0.9375rem;
+    color: var(--wt-text-primary);
+    text-align: left !important;
+}
+
+.wt-legal__actions--bottom {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--wt-space-6);
+    padding-top: var(--wt-space-5);
+    border-top: 1px solid var(--wt-gold-rule);
+}
+
+@media (max-width: 700px) {
+    /* solta o nowrap: em tela estreita o título não cabe numa linha */
+    .wt-legal__title { white-space: normal; }
+
+    .wt-legal__topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--wt-space-2);
+    }
+
+    .wt-legal__logo-img { height: 44px; }
+
+    /* justify em coluna estreita abre rios de espaço */
+    .wt-legal__body p,
+    .wt-legal__body li { text-align: left; }
+}
